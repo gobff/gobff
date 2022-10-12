@@ -1,0 +1,23 @@
+version: 1
+
+resources:
+  sw_planets:
+    type: http
+    config:
+      method: get
+      path: https://swapi.dev/api/planets
+
+  sw_people:
+    type: http
+    config:
+      method: get
+      path: https://swapi.dev/api/people
+
+routes:
+  - path: /v1/sw
+    method: GET
+    resources:
+      sw_planets:
+        async: true
+      sw_people:
+        async: true
