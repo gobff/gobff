@@ -6,40 +6,39 @@ import (
 	"github.com/gondalf/gondalf/config"
 	"github.com/gondalf/gondalf/resource"
 	"github.com/gondalf/gondalf/route"
-	"gopkg.in/yaml.v3"
+	"github.com/gondalf/gondalf/source"
 	"log"
 	"os"
 )
 
 type (
-	ResourceFactory func(name string, config yaml.Node) (resource.Resource, error)
-	Server          interface {
-		RegisterResourceFactory(tp string, fn ResourceFactory) error
-		MustLoadConfigFile(path string)
+	Server interface {
+		RegisterSourceFactory(tp string, fn source.FactoryFunc) error
 		LoadConfigFile(path string) error
+		MustLoadConfigFile(path string)
 		Run() error
 	}
 	serverImpl struct {
-		resourceFactoryMap map[string]ResourceFactory
-		resources          map[string]resource.Resource
-		config             *config.File
-		gin                *gin.Engine
+		sourceFactories map[string]source.FactoryFunc
+		resources       map[string]resource.Resource
+		config          *config.File
+		gin             *gin.Engine
 	}
 )
 
 func New() Server {
 	return &serverImpl{
-		resourceFactoryMap: make(map[string]ResourceFactory),
-		resources:          make(map[string]resource.Resource),
-		gin:                gin.New(),
+		sourceFactories: make(map[string]source.FactoryFunc),
+		resources:       make(map[string]resource.Resource),
+		gin:             gin.New(),
 	}
 }
 
-func (s *serverImpl) RegisterResourceFactory(tp string, fn ResourceFactory) error {
-	if _, found := s.resourceFactoryMap[tp]; found {
-		return fmt.Errorf("resource type already registered: %s", tp)
+func (s *serverImpl) RegisterSourceFactory(tp string, fn source.FactoryFunc) error {
+	if _, found := s.sourceFactories[tp]; found {
+		return fmt.Errorf("source type already registered: %s", tp)
 	}
-	s.resourceFactoryMap[tp] = fn
+	s.sourceFactories[tp] = fn
 	return nil
 }
 
@@ -80,17 +79,17 @@ func (s *serverImpl) Run() error {
 
 func (s *serverImpl) instanceResources() error {
 	for name, res := range s.config.Resources {
-		factoryFunc, found := s.resourceFactoryMap[res.Type]
+		sourceFactory, found := s.sourceFactories[res.Source.Type]
 		if !found {
 			return fmt.Errorf("resource not found: %s", name)
 		}
 
-		instance, err := factoryFunc(name, res.Config)
+		srcInstance, err := sourceFactory(res.Source.Config)
 		if err != nil {
 			return err
 		}
 
-		s.resources[name] = instance
+		s.resources[name] = resource.NewResource(srcInstance)
 	}
 	return nil
 }

@@ -1,17 +1,22 @@
 version: 1
 
+globals:
+  sw_url: "https://swapi.dev/api"
+
 resources:
   sw_planets:
-    type: http
-    config:
-      method: get
-      path: https://swapi.dev/api/planets
+    source:
+      type: http
+      config:
+        method: get
+        path: {{sw_url}}/planets
 
   sw_people:
-    type: http
-    config:
-      method: get
-      path: https://swapi.dev/api/people
+    source:
+      type: http
+      config:
+        method: get
+        path: https://swapi.dev/api/people
 
 routes:
   - path: /v1/sw

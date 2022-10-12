@@ -10,8 +10,10 @@ type (
 	File struct {
 		Version   int
 		Resources map[string]struct {
-			Type   string    `yaml:"type"`
-			Config yaml.Node `yaml:"config"`
+			Source struct {
+				Type   string    `yaml:"type"`
+				Config yaml.Node `yaml:"config"`
+			} `yaml:"source"`
 		} `yaml:"resources"`
 		Routes []struct {
 			Path      string `yaml:"path"`

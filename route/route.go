@@ -32,7 +32,7 @@ func New(path string, resources Resources) Route {
 
 func (r *routeImpl) Run(c *gin.Context) {
 	var input json.RawMessage
-	if err := c.BindJSON(&input); err != nil && err != io.EOF {
+	if err := c.Bind(&input); err != nil && err != io.EOF {
 		c.JSON(http.StatusInternalServerError, Response{Err: err})
 		return
 	}
