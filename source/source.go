@@ -11,9 +11,13 @@ const (
 	KindHttp = "http"
 )
 
-type Source interface {
-	Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error)
-}
+type (
+	Params map[string]string
+	Source interface {
+		Run(ctx context.Context, params Params, input json.RawMessage) (output json.RawMessage, err error)
+		ValidateParams(params Params) error
+	}
+)
 
 func GetSource(kind string, config yaml.Node) (Source, error) {
 	switch kind {

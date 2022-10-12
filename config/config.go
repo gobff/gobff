@@ -9,13 +9,15 @@ import (
 
 type (
 	File struct {
-		Version   int
+		Version int
+		Sources map[string]struct {
+			Kind   string    `yaml:"kind"`
+			Config yaml.Node `yaml:"config"`
+		} `yaml:"sources"`
 		Resources map[string]struct {
-			CacheDuration time.Duration `yaml:"cache_duration"`
-			Source        struct {
-				Kind   string    `yaml:"kind"`
-				Config yaml.Node `yaml:"config"`
-			} `yaml:"source"`
+			CacheDuration time.Duration     `yaml:"cache_duration"`
+			Source        string            `yaml:"source"`
+			Params        map[string]string `yaml:"params"`
 		} `yaml:"resources"`
 		Routes []struct {
 			Path      string `yaml:"path"`

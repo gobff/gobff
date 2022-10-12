@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"gopkg.in/yaml.v3"
 	"log"
 	"net/http"
@@ -11,8 +12,7 @@ import (
 )
 
 type sourceHttp struct {
-	Method string `yaml:"method"`
-	Path   string `yaml:"path"`
+	URL string `yaml:"url"`
 }
 
 func newSourceHTTP(config yaml.Node) (*sourceHttp, error) {
@@ -23,9 +23,8 @@ func newSourceHTTP(config yaml.Node) (*sourceHttp, error) {
 	return &src, nil
 }
 
-func (h *sourceHttp) Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error) {
-	log.Println("calling: ", h.Method, h.Path)
-	req, err := http.NewRequest(strings.ToUpper(h.Method), h.Path, bytes.NewReader(input))
+func (h *sourceHttp) Run(ctx context.Context, params Params, input json.RawMessage) (output json.RawMessage, err error) {
+	req, err := http.NewRequest(strings.ToUpper(params["method"]), h.URL+params["path"], bytes.NewReader(input))
 	if err != nil {
 		return nil, err
 	}
@@ -43,4 +42,14 @@ func (h *sourceHttp) Run(ctx context.Context, input json.RawMessage) (output jso
 	}()
 
 	return output, json.NewDecoder(res.Body).Decode(&output)
+}
+
+func (h *sourceHttp) ValidateParams(params Params) error {
+	if params["method"] == "" {
+		return errors.New("param 'method' for http source is required")
+	}
+	if params["path"] == "" {
+		return errors.New("param 'path' for http source is required")
+	}
+	return nil
 }

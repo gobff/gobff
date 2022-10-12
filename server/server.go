@@ -18,6 +18,7 @@ type (
 		Run() error
 	}
 	serverImpl struct {
+		sources   map[string]source.Source
 		resources map[string]resource.Resource
 		config    *config.File
 		gin       *gin.Engine
@@ -26,6 +27,7 @@ type (
 
 func New() Server {
 	return &serverImpl{
+		sources:   make(map[string]source.Source),
 		resources: make(map[string]resource.Resource),
 		gin:       gin.New(),
 	}
@@ -57,6 +59,9 @@ func (s *serverImpl) MustLoadConfigFile(path string) {
 }
 
 func (s *serverImpl) Run() error {
+	if err := s.instanceSources(); err != nil {
+		return err
+	}
 	if err := s.instanceResources(); err != nil {
 		return err
 	}
@@ -66,15 +71,28 @@ func (s *serverImpl) Run() error {
 	return s.gin.Run("localhost:8080")
 }
 
-func (s *serverImpl) instanceResources() error {
-	for name, res := range s.config.Resources {
-		src, err := source.GetSource(res.Source.Kind, res.Source.Config)
+func (s *serverImpl) instanceSources() error {
+	for name, cfg := range s.config.Sources {
+		src, err := source.GetSource(cfg.Kind, cfg.Config)
 		if err != nil {
 			return err
 		}
+		s.sources[name] = src
+	}
+	return nil
+}
 
-		s.resources[name] = resource.NewResource(src, resource.Options{
-			CacheDuration: res.CacheDuration,
+func (s *serverImpl) instanceResources() error {
+	for name, cfg := range s.config.Resources {
+		src, found := s.sources[cfg.Source]
+		if !found {
+			return fmt.Errorf("source not found: %s", cfg.Source)
+		}
+		if err := src.ValidateParams(cfg.Params); err != nil {
+			return err
+		}
+		s.resources[name] = resource.NewResource(src, cfg.Params, resource.Options{
+			CacheDuration: cfg.CacheDuration,
 		})
 	}
 	return nil

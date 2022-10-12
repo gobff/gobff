@@ -3,7 +3,6 @@ package resource
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/gondalf/gondalf/cache"
 	"github.com/gondalf/gondalf/source"
 	"sync"
@@ -18,20 +17,22 @@ type (
 		Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error)
 	}
 	resource struct {
-		source source.Source
-		mutex  *sync.Mutex
-		cache  cache.Cache[json.RawMessage]
+		source       source.Source
+		sourceParams source.Params
+		mutex        *sync.Mutex
+		cache        cache.Cache[json.RawMessage]
 	}
 )
 
-func NewResource(source source.Source, opts Options) Resource {
+func NewResource(source source.Source, params source.Params, opts Options) Resource {
 	if opts.CacheDuration == 0 {
 		opts.CacheDuration = time.Second
 	}
 	r := &resource{
-		source: source,
-		mutex:  new(sync.Mutex),
-		cache:  cache.NewCache[json.RawMessage](opts.CacheDuration),
+		source:       source,
+		sourceParams: params,
+		mutex:        new(sync.Mutex),
+		cache:        cache.NewCache[json.RawMessage](opts.CacheDuration),
 	}
 	return r
 }
@@ -44,8 +45,7 @@ func (r resource) Run(ctx context.Context, input json.RawMessage) (json.RawMessa
 		return output, nil
 	}
 
-	fmt.Println("not found")
-	output, err := r.source.Run(ctx, input)
+	output, err := r.source.Run(ctx, r.sourceParams, input)
 	if err != nil {
 		return nil, err
 	}
