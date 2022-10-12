@@ -1,17 +1,16 @@
 version: 1
 
-globals:
-  sw_url: "https://swapi.dev/api"
-
 resources:
   sw_planets:
+    cache_duration: 5s
     source:
       kind: http
       config:
         method: get
-        path: {{sw_url}}/planets
+        path: https://swapi.dev/api/planets
 
   sw_people:
+    cache_duration: 10s
     source:
       kind: http
       config:

@@ -4,13 +4,15 @@ import (
 	"gopkg.in/yaml.v3"
 	"io"
 	"log"
+	"time"
 )
 
 type (
 	File struct {
 		Version   int
 		Resources map[string]struct {
-			Source struct {
+			CacheDuration time.Duration `yaml:"cache_duration"`
+			Source        struct {
 				Kind   string    `yaml:"kind"`
 				Config yaml.Node `yaml:"config"`
 			} `yaml:"source"`

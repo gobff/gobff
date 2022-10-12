@@ -73,7 +73,9 @@ func (s *serverImpl) instanceResources() error {
 			return err
 		}
 
-		s.resources[name] = resource.NewResource(src)
+		s.resources[name] = resource.NewResource(src, resource.Options{
+			CacheDuration: res.CacheDuration,
+		})
 	}
 	return nil
 }

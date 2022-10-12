@@ -3,23 +3,54 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/gondalf/gondalf/cache"
 	"github.com/gondalf/gondalf/source"
+	"sync"
+	"time"
 )
 
 type (
+	Options struct {
+		CacheDuration time.Duration
+	}
 	Resource interface {
 		Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error)
 	}
 	resource struct {
 		source source.Source
+		mutex  *sync.Mutex
+		cache  cache.Cache[json.RawMessage]
 	}
 )
 
-func NewResource(source source.Source) Resource {
-	r := &resource{source: source}
+func NewResource(source source.Source, opts Options) Resource {
+	if opts.CacheDuration == 0 {
+		opts.CacheDuration = time.Second
+	}
+	r := &resource{
+		source: source,
+		mutex:  new(sync.Mutex),
+		cache:  cache.NewCache[json.RawMessage](opts.CacheDuration),
+	}
 	return r
 }
 
 func (r resource) Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error) {
-	return r.source.Run(ctx, input)
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if output, found := r.cache.Get(); found {
+		return output, nil
+	}
+
+	fmt.Println("not found")
+	output, err := r.source.Run(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	r.cache.Set(output)
+
+	return output, err
 }

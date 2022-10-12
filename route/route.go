@@ -1,6 +1,7 @@
 package route
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gondalf/gondalf/resource"
@@ -37,21 +38,33 @@ func (r *routeImpl) Run(c *gin.Context) {
 		return
 	}
 
-	results := make(map[string]chan Response)
+	mapChanResponse := r.executeResources(c, input)
+	defer closeResponseChannels(mapChanResponse)
+
+	requestResponse := make(map[string]Response)
+	for name, chanResponse := range mapChanResponse {
+		requestResponse[r.resources[name].As] = <-chanResponse
+	}
+	c.IndentedJSON(http.StatusOK, requestResponse)
+}
+
+func (r *routeImpl) executeResources(ctx context.Context, input json.RawMessage) map[string]chan Response {
+	responses := make(map[string]chan Response)
 	for name, res := range r.resources {
 		name, res := name, res
 		cResponse := make(chan Response)
 		go func() {
 			var response Response
-			response.Data, response.Err = res.Run(c, input)
+			response.Data, response.Err = res.Run(ctx, input)
 			cResponse <- response
 		}()
-		results[name] = cResponse
+		responses[name] = cResponse
 	}
+	return responses
+}
 
-	response := make(map[string]Response)
-	for name, cResult := range results {
-		response[r.resources[name].As] = <-cResult
+func closeResponseChannels(responses map[string]chan Response) {
+	for _, cResponse := range responses {
+		close(cResponse)
 	}
-	c.IndentedJSON(http.StatusOK, response)
 }
