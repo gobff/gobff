@@ -3,10 +3,10 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gondalf/gondalf/config"
-	"github.com/gondalf/gondalf/resource"
-	"github.com/gondalf/gondalf/route"
-	"github.com/gondalf/gondalf/source"
+	"github.com/gobff/gobff/config"
+	"github.com/gobff/gobff/resource"
+	"github.com/gobff/gobff/route"
+	"github.com/gobff/gobff/source"
 	"log"
 	"os"
 )

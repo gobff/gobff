@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gondalf/gondalf/server"
+	"github.com/gobff/gobff/server"
 	"log"
 )
 

@@ -3,8 +3,8 @@ package resource
 import (
 	"context"
 	"encoding/json"
-	"github.com/gondalf/gondalf/cache"
-	"github.com/gondalf/gondalf/source"
+	"github.com/gobff/gobff/cache"
+	"github.com/gobff/gobff/source"
 	"sync"
 	"time"
 )

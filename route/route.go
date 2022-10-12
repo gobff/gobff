@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/gondalf/gondalf/resource"
+	"github.com/gobff/gobff/resource"
 	"io"
 	"net/http"
 )

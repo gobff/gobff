@@ -1,4 +1,4 @@
-module github.com/gondalf/gondalf
+module github.com/gobff/gobff
 
 go 1.18
 
