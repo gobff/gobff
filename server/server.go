@@ -86,9 +86,12 @@ func (s *serverImpl) instanceRoutes() error {
 			if !found {
 				return fmt.Errorf("resource not found: %s", resourceName)
 			}
+			if resourceConfig.As == "" {
+				resourceConfig.As = resourceName
+			}
 			routeResources[resourceName] = route.Resource{
 				Resource: r,
-				Async:    resourceConfig.Async,
+				As:       resourceConfig.As,
 			}
 		}
 		s.gin.Handle(routeConfig.Method, routeConfig.Path, route.New(routeConfig.Path, routeResources).Run)

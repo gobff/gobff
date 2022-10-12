@@ -19,7 +19,7 @@ type (
 			Path      string `yaml:"path"`
 			Method    string `yaml:"method"`
 			Resources map[string]struct {
-				Async bool `yaml:"async"`
+				As string `yaml:"as"`
 			} `yaml:"resources"`
 		} `yaml:"routes"`
 	}

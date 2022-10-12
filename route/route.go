@@ -14,7 +14,7 @@ type (
 	}
 	Resource struct {
 		resource.Resource
-		Async bool
+		As string
 	}
 	Resources map[string]Resource
 	routeImpl struct {
@@ -37,18 +37,21 @@ func (r *routeImpl) Run(c *gin.Context) {
 		return
 	}
 
-	results := make(map[string]resource.ChanResult)
+	results := make(map[string]chan Response)
 	for name, res := range r.resources {
-		results[name] = res.Run(c, input)
+		name, res := name, res
+		cResponse := make(chan Response)
+		go func() {
+			var response Response
+			response.Data, response.Err = res.Run(c, input)
+			cResponse <- response
+		}()
+		results[name] = cResponse
 	}
 
 	response := make(map[string]Response)
 	for name, cResult := range results {
-		result := <-cResult
-		response[name] = Response{
-			Data: result.Data,
-			Err:  result.Error,
-		}
+		response[r.resources[name].As] = <-cResult
 	}
 	c.IndentedJSON(http.StatusOK, response)
 }

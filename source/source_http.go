@@ -24,6 +24,7 @@ func newSourceHTTP(config yaml.Node) (*sourceHttp, error) {
 }
 
 func (h *sourceHttp) Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error) {
+	log.Println("calling: ", h.Method, h.Path)
 	req, err := http.NewRequest(strings.ToUpper(h.Method), h.Path, bytes.NewReader(input))
 	if err != nil {
 		return nil, err

@@ -23,6 +23,6 @@ routes:
     method: GET
     resources:
       sw_planets:
-        async: true
+        as: planets
       sw_people:
-        async: true
+        as: people
