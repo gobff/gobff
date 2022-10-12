@@ -9,8 +9,13 @@ import (
 )
 
 type (
-	Resource interface {
-		Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error)
+	Result struct {
+		Data  json.RawMessage
+		Error error
+	}
+	ChanResult chan Result
+	Resource   interface {
+		Run(ctx context.Context, input json.RawMessage) ChanResult
 	}
 	resource struct {
 		source  source.Source
@@ -25,6 +30,13 @@ func NewResource(source source.Source) Resource {
 	return r
 }
 
-func (r resource) Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error) {
-	return r.source.Run(ctx, input)
+func (r resource) Run(ctx context.Context, input json.RawMessage) ChanResult {
+	cResult := make(ChanResult)
+	go func() {
+		var result Result
+		result.Data, result.Error = r.source.Run(ctx, input)
+		cResult <- result
+	}()
+	return cResult
+
 }

@@ -37,12 +37,17 @@ func (r *routeImpl) Run(c *gin.Context) {
 		return
 	}
 
-	response := make(map[string]Response)
+	results := make(map[string]resource.ChanResult)
 	for name, res := range r.resources {
-		output, err := res.Run(c, input)
+		results[name] = res.Run(c, input)
+	}
+
+	response := make(map[string]Response)
+	for name, cResult := range results {
+		result := <-cResult
 		response[name] = Response{
-			Data: output,
-			Err:  err,
+			Data: result.Data,
+			Err:  result.Error,
 		}
 	}
 	c.IndentedJSON(http.StatusOK, response)
