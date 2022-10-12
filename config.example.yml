@@ -1,21 +1,25 @@
 version: 1
 
+sources:
+  swapi:
+    kind: http
+    config:
+      url: https://swapi.dev/api
+
 resources:
   sw_planets:
     cache_duration: 5s
-    source:
-      kind: http
-      config:
-        method: get
-        path: https://swapi.dev/api/planets
+    source: swapi
+    params:
+      method: get
+      path: /planets
 
   sw_people:
     cache_duration: 10s
-    source:
-      kind: http
-      config:
-        method: get
-        path: https://swapi.dev/api/people
+    source: swapi
+    params:
+      method: get
+      path: /people
 
 routes:
   - path: /v1/sw
@@ -23,5 +27,8 @@ routes:
     resources:
       sw_planets:
         as: planets
+        output:
+          name: results.name
+          height: results.height
       sw_people:
         as: people
