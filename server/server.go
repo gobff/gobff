@@ -13,33 +13,22 @@ import (
 
 type (
 	Server interface {
-		RegisterSourceFactory(tp string, fn source.FactoryFunc) error
 		LoadConfigFile(path string) error
 		MustLoadConfigFile(path string)
 		Run() error
 	}
 	serverImpl struct {
-		sourceFactories map[string]source.FactoryFunc
-		resources       map[string]resource.Resource
-		config          *config.File
-		gin             *gin.Engine
+		resources map[string]resource.Resource
+		config    *config.File
+		gin       *gin.Engine
 	}
 )
 
 func New() Server {
 	return &serverImpl{
-		sourceFactories: make(map[string]source.FactoryFunc),
-		resources:       make(map[string]resource.Resource),
-		gin:             gin.New(),
+		resources: make(map[string]resource.Resource),
+		gin:       gin.New(),
 	}
-}
-
-func (s *serverImpl) RegisterSourceFactory(tp string, fn source.FactoryFunc) error {
-	if _, found := s.sourceFactories[tp]; found {
-		return fmt.Errorf("source type already registered: %s", tp)
-	}
-	s.sourceFactories[tp] = fn
-	return nil
 }
 
 func (s *serverImpl) LoadConfigFile(path string) error {
@@ -79,17 +68,12 @@ func (s *serverImpl) Run() error {
 
 func (s *serverImpl) instanceResources() error {
 	for name, res := range s.config.Resources {
-		sourceFactory, found := s.sourceFactories[res.Source.Type]
-		if !found {
-			return fmt.Errorf("resource not found: %s", name)
-		}
-
-		srcInstance, err := sourceFactory(res.Source.Config)
+		src, err := source.GetSource(res.Source.Kind, res.Source.Config)
 		if err != nil {
 			return err
 		}
 
-		s.resources[name] = resource.NewResource(srcInstance)
+		s.resources[name] = resource.NewResource(src)
 	}
 	return nil
 }

@@ -1,22 +1,29 @@
-package http
+package source
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/gondalf/gondalf/source"
 	"gopkg.in/yaml.v3"
 	"log"
 	"net/http"
 	"strings"
 )
 
-type Http struct {
+type sourceHttp struct {
 	Method string `yaml:"method"`
 	Path   string `yaml:"path"`
 }
 
-func (h *Http) Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error) {
+func newSourceHTTP(config yaml.Node) (*sourceHttp, error) {
+	var src sourceHttp
+	if err := config.Decode(&src); err != nil {
+		return nil, err
+	}
+	return &src, nil
+}
+
+func (h *sourceHttp) Run(ctx context.Context, input json.RawMessage) (output json.RawMessage, err error) {
 	req, err := http.NewRequest(strings.ToUpper(h.Method), h.Path, bytes.NewReader(input))
 	if err != nil {
 		return nil, err
@@ -35,12 +42,4 @@ func (h *Http) Run(ctx context.Context, input json.RawMessage) (output json.RawM
 	}()
 
 	return output, json.NewDecoder(res.Body).Decode(&output)
-}
-
-func FactoryFunc(config yaml.Node) (source.Source, error) {
-	var src Http
-	if err := config.Decode(&src); err != nil {
-		return nil, err
-	}
-	return &src, nil
 }

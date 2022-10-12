@@ -6,14 +6,14 @@ globals:
 resources:
   sw_planets:
     source:
-      type: http
+      kind: http
       config:
         method: get
         path: {{sw_url}}/planets
 
   sw_people:
     source:
-      type: http
+      kind: http
       config:
         method: get
         path: https://swapi.dev/api/people

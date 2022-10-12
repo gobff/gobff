@@ -11,7 +11,7 @@ type (
 		Version   int
 		Resources map[string]struct {
 			Source struct {
-				Type   string    `yaml:"type"`
+				Kind   string    `yaml:"kind"`
 				Config yaml.Node `yaml:"config"`
 			} `yaml:"source"`
 		} `yaml:"resources"`
