@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gobff/gobff/cache"
 	"github.com/gobff/gobff/config"
 	"github.com/gobff/gobff/resource"
 	"github.com/gobff/gobff/route"
@@ -92,9 +94,12 @@ func (s *serverImpl) instanceResources() error {
 		if err := src.ValidateParams(cfg.Params); err != nil {
 			return err
 		}
-		s.resources[name] = resource.NewResource(src, cfg.Params, resource.Options{
-			CacheDuration: cfg.CacheDuration,
-		})
+
+		var opts resource.Options
+		if cfg.CacheDuration != 0 {
+			opts.Cache = cache.NewCache[json.RawMessage](cfg.CacheDuration)
+		}
+		s.resources[name] = resource.NewResource(src, cfg.Params, opts)
 	}
 	return nil
 }
@@ -111,19 +116,15 @@ func (s *serverImpl) instanceRoutes() error {
 				resourceConfig.As = resourceName
 			}
 
-			routeResource := route.Resource{
-				Resource: r,
-				As:       resourceConfig.As,
-			}
+			var opts route.ResourceOptions
 			if resourceConfig.Output != "" {
-				output, err := transformer.New(resourceConfig.Output)
+				t, err := transformer.New(resourceConfig.Output)
 				if err != nil {
 					return err
 				}
-				routeResource.Transformer = output
+				opts.Transformer = t
 			}
-
-			routeResources[resourceName] = routeResource
+			routeResources[resourceName] = route.NewResource(r, resourceConfig.As, opts)
 		}
 		s.gin.Handle(routeConfig.Method, routeConfig.Path, route.New(routeConfig.Path, routeResources).Run)
 	}

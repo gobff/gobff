@@ -4,14 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gobff/gobff/cache"
+	"github.com/gobff/gobff/pipeline"
 	"github.com/gobff/gobff/source"
+	"github.com/gobff/gobff/transformer"
 	"sync"
-	"time"
 )
 
 type (
 	Options struct {
-		CacheDuration time.Duration
+		Cache       cache.Cache[json.RawMessage]
+		Transformer transformer.Transformer
 	}
 	Resource interface {
 		Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error)
@@ -20,37 +22,31 @@ type (
 		source       source.Source
 		sourceParams source.Params
 		mutex        *sync.Mutex
-		cache        cache.Cache[json.RawMessage]
+		pipeline     pipeline.Pipeline
 	}
 )
 
 func NewResource(source source.Source, params source.Params, opts Options) Resource {
-	if opts.CacheDuration == 0 {
-		opts.CacheDuration = time.Second
-	}
 	r := &resource{
 		source:       source,
 		sourceParams: params,
 		mutex:        new(sync.Mutex),
-		cache:        cache.NewCache[json.RawMessage](opts.CacheDuration),
+	}
+	if opts.Cache != nil {
+		r.pipeline.Add(pipeline.WithCache(opts.Cache))
+	}
+	if opts.Transformer != nil {
+		r.pipeline.Add(pipeline.WithTransformer(opts.Transformer))
 	}
 	return r
 }
 
 func (r resource) Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error) {
+	return r.pipeline.Run(ctx, input, r.run)
+}
+
+func (r resource) run(ctx context.Context, input json.RawMessage) (json.RawMessage, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-
-	if output, found := r.cache.Get(); found {
-		return output, nil
-	}
-
-	output, err := r.source.Run(ctx, r.sourceParams, input)
-	if err != nil {
-		return nil, err
-	}
-
-	r.cache.Set(output)
-
-	return output, err
+	return r.source.Run(ctx, r.sourceParams, input)
 }
