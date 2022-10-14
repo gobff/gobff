@@ -23,7 +23,8 @@ type (
 			Path      string `yaml:"path"`
 			Method    string `yaml:"method"`
 			Resources map[string]struct {
-				As string `yaml:"as"`
+				As     string `yaml:"as,omitempty"`
+				Output string `yaml:"output,omitempty"`
 			} `yaml:"resources"`
 		} `yaml:"routes"`
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gobff/gobff/resource"
+	"github.com/gobff/gobff/transformer"
 	"io"
 	"net/http"
 )
@@ -15,7 +16,8 @@ type (
 	}
 	Resource struct {
 		resource.Resource
-		As string
+		Transformer transformer.Transformer
+		As          string
 	}
 	Resources map[string]Resource
 	routeImpl struct {
@@ -51,16 +53,31 @@ func (r *routeImpl) Run(c *gin.Context) {
 func (r *routeImpl) executeResources(ctx context.Context, input json.RawMessage) map[string]chan Response {
 	responses := make(map[string]chan Response)
 	for name, res := range r.resources {
-		name, res := name, res
-		cResponse := make(chan Response)
-		go func() {
-			var response Response
-			response.Data, response.Err = res.Run(ctx, input)
-			cResponse <- response
-		}()
+		name, res, cResponse := name, res, make(chan Response)
+		go executeResource(ctx, cResponse, res, input)
 		responses[name] = cResponse
 	}
 	return responses
+}
+
+func executeResource(ctx context.Context, cResponse chan Response, res Resource, input json.RawMessage) {
+	data, err := res.Run(ctx, input)
+	if err != nil {
+		cResponse <- Response{Err: err}
+		return
+	}
+
+	if res.Transformer != nil {
+		data, err = res.Transformer.Transform(data)
+		if err != nil {
+			cResponse <- Response{Err: err}
+			return
+		}
+	}
+
+	cResponse <- Response{
+		Data: data,
+	}
 }
 
 func closeResponseChannels(responses map[string]chan Response) {

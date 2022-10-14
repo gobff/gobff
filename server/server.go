@@ -7,6 +7,7 @@ import (
 	"github.com/gobff/gobff/resource"
 	"github.com/gobff/gobff/route"
 	"github.com/gobff/gobff/source"
+	"github.com/gobff/gobff/transformer"
 	"log"
 	"os"
 )
@@ -109,10 +110,20 @@ func (s *serverImpl) instanceRoutes() error {
 			if resourceConfig.As == "" {
 				resourceConfig.As = resourceName
 			}
-			routeResources[resourceName] = route.Resource{
+
+			routeResource := route.Resource{
 				Resource: r,
 				As:       resourceConfig.As,
 			}
+			if resourceConfig.Output != "" {
+				output, err := transformer.New(resourceConfig.Output)
+				if err != nil {
+					return err
+				}
+				routeResource.Transformer = output
+			}
+
+			routeResources[resourceName] = routeResource
 		}
 		s.gin.Handle(routeConfig.Method, routeConfig.Path, route.New(routeConfig.Path, routeResources).Run)
 	}
