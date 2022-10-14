@@ -3,10 +3,11 @@ package route
 import (
 	"context"
 	"encoding/json"
-	"github.com/gobff/gobff/cache"
-	"github.com/gobff/gobff/pipeline"
-	"github.com/gobff/gobff/resource"
-	"github.com/gobff/gobff/transformer"
+	"github.com/gobff/gobff/pkg/resource"
+	"github.com/gobff/gobff/tool/cache"
+	"github.com/gobff/gobff/tool/pipe"
+	"github.com/gobff/gobff/tool/pipeline"
+	"github.com/gobff/gobff/tool/transformer"
 )
 
 type (
@@ -16,7 +17,7 @@ type (
 	}
 	Resource struct {
 		resource resource.Resource
-		pipeline pipeline.Pipeline
+		pipeline pipeline.Pipeline[json.RawMessage, json.RawMessage]
 		As       string
 	}
 )
@@ -27,10 +28,10 @@ func NewResource(resource resource.Resource, as string, opts ResourceOptions) Re
 		As:       as,
 	}
 	if opts.Cache != nil {
-		r.pipeline.Add(pipeline.WithCache(opts.Cache))
+		r.pipeline.Add(pipe.WithCache[json.RawMessage, json.RawMessage](opts.Cache))
 	}
 	if opts.Transformer != nil {
-		r.pipeline.Add(pipeline.WithTransformer(opts.Transformer))
+		r.pipeline.Add(pipe.WithTransformer(opts.Transformer))
 	}
 	return r
 }

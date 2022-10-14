@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gobff/gobff/cache"
-	"github.com/gobff/gobff/config"
-	"github.com/gobff/gobff/resource"
-	"github.com/gobff/gobff/route"
-	"github.com/gobff/gobff/source"
-	"github.com/gobff/gobff/transformer"
+	"github.com/gobff/gobff/internal/config"
+	"github.com/gobff/gobff/pkg/resource"
+	route2 "github.com/gobff/gobff/pkg/route"
+	"github.com/gobff/gobff/pkg/source"
+	"github.com/gobff/gobff/tool/cache"
+	"github.com/gobff/gobff/tool/transformer"
 	"log"
 	"os"
 )
@@ -106,7 +106,7 @@ func (s *serverImpl) instanceResources() error {
 
 func (s *serverImpl) instanceRoutes() error {
 	for _, routeConfig := range s.config.Routes {
-		routeResources := make(route.Resources)
+		routeResources := make(route2.Resources)
 		for resourceName, resourceConfig := range routeConfig.Resources {
 			r, found := s.resources[resourceName]
 			if !found {
@@ -116,7 +116,7 @@ func (s *serverImpl) instanceRoutes() error {
 				resourceConfig.As = resourceName
 			}
 
-			var opts route.ResourceOptions
+			var opts route2.ResourceOptions
 			if resourceConfig.Output != "" {
 				t, err := transformer.New(resourceConfig.Output)
 				if err != nil {
@@ -124,9 +124,9 @@ func (s *serverImpl) instanceRoutes() error {
 				}
 				opts.Transformer = t
 			}
-			routeResources[resourceName] = route.NewResource(r, resourceConfig.As, opts)
+			routeResources[resourceName] = route2.NewResource(r, resourceConfig.As, opts)
 		}
-		s.gin.Handle(routeConfig.Method, routeConfig.Path, route.New(routeConfig.Path, routeResources).Run)
+		s.gin.Handle(routeConfig.Method, routeConfig.Path, route2.New(routeConfig.Path, routeResources).Run)
 	}
 	return nil
 }

@@ -2,7 +2,7 @@ package filter
 
 import (
 	"fmt"
-	"github.com/gobff/gobff/transformer/parser"
+	"github.com/gobff/gobff/tool/transformer/parser"
 	"reflect"
 )
 

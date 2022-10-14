@@ -2,8 +2,8 @@ package transformer
 
 import (
 	"encoding/json"
-	"github.com/gobff/gobff/transformer/filter"
-	"github.com/gobff/gobff/transformer/parser"
+	"github.com/gobff/gobff/tool/transformer/filter"
+	"github.com/gobff/gobff/tool/transformer/parser"
 )
 
 type (

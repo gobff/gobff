@@ -3,10 +3,11 @@ package resource
 import (
 	"context"
 	"encoding/json"
-	"github.com/gobff/gobff/cache"
-	"github.com/gobff/gobff/pipeline"
-	"github.com/gobff/gobff/source"
-	"github.com/gobff/gobff/transformer"
+	"github.com/gobff/gobff/pkg/source"
+	"github.com/gobff/gobff/tool/cache"
+	"github.com/gobff/gobff/tool/pipe"
+	"github.com/gobff/gobff/tool/pipeline"
+	"github.com/gobff/gobff/tool/transformer"
 	"sync"
 )
 
@@ -22,7 +23,7 @@ type (
 		source       source.Source
 		sourceParams source.Params
 		mutex        *sync.Mutex
-		pipeline     pipeline.Pipeline
+		pipeline     pipeline.Pipeline[json.RawMessage, json.RawMessage]
 	}
 )
 
@@ -33,10 +34,10 @@ func NewResource(source source.Source, params source.Params, opts Options) Resou
 		mutex:        new(sync.Mutex),
 	}
 	if opts.Cache != nil {
-		r.pipeline.Add(pipeline.WithCache(opts.Cache))
+		r.pipeline.Add(pipe.WithCache[json.RawMessage, json.RawMessage](opts.Cache))
 	}
 	if opts.Transformer != nil {
-		r.pipeline.Add(pipeline.WithTransformer(opts.Transformer))
+		r.pipeline.Add(pipe.WithTransformer(opts.Transformer))
 	}
 	return r
 }
