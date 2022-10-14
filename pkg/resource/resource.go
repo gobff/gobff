@@ -18,8 +18,10 @@ type (
 	}
 	Resource interface {
 		Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error)
+		Name() string
 	}
 	resource struct {
+		name         string
 		source       source.Source
 		sourceParams source.Params
 		mutex        *sync.Mutex
@@ -27,8 +29,9 @@ type (
 	}
 )
 
-func NewResource(source source.Source, params source.Params, opts Options) Resource {
+func NewResource(name string, source source.Source, params source.Params, opts Options) Resource {
 	r := &resource{
+		name:         name,
 		source:       source,
 		sourceParams: params,
 		mutex:        new(sync.Mutex),
@@ -36,10 +39,11 @@ func NewResource(source source.Source, params source.Params, opts Options) Resou
 	if opts.Cache != nil {
 		r.pipeline.Add(pipe.WithCache[json.RawMessage, json.RawMessage](opts.Cache))
 	}
-	if opts.Transformer != nil {
-		r.pipeline.Add(pipe.WithTransformer(opts.Transformer))
-	}
 	return r
+}
+
+func (r resource) Name() string {
+	return r.name
 }
 
 func (r resource) Run(ctx context.Context, input json.RawMessage) (json.RawMessage, error) {

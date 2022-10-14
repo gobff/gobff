@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/gobff/gobff/tool/donewatcher"
+	"github.com/gobff/gobff/tool/syncmap"
 	"io"
 	"net/http"
+	"sync"
 )
 
 type (
@@ -32,35 +35,28 @@ func (r *routeImpl) Run(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, Response{Err: err})
 		return
 	}
-
-	mapChanResponse := r.executeResources(c, input)
-	defer closeResponseChannels(mapChanResponse)
-
-	requestResponse := make(map[string]Response)
-	for name, chanResponse := range mapChanResponse {
-		requestResponse[r.resources[name].As] = <-chanResponse
-	}
-	c.IndentedJSON(http.StatusOK, requestResponse)
+	c.IndentedJSON(
+		http.StatusOK,
+		r.executeResources(c, input),
+	)
 }
 
-func (r *routeImpl) executeResources(ctx context.Context, input json.RawMessage) map[string]chan Response {
-	responses := make(map[string]chan Response)
-	for name, res := range r.resources {
-		name, res, cResponse := name, res, make(chan Response)
-		go executeResource(ctx, cResponse, res, input)
-		responses[name] = cResponse
-	}
-	return responses
-}
+func (r *routeImpl) executeResources(ctx context.Context, input json.RawMessage) map[string]Response {
+	var (
+		wg          sync.WaitGroup
+		responseMap = syncmap.New[Response]()
+		watcher     = donewatcher.NewWatcher()
+	)
 
-func executeResource(ctx context.Context, cResponse chan Response, res Resource, input json.RawMessage) {
-	var response Response
-	response.Data, response.Err = res.Run(ctx, input)
-	cResponse <- response
-}
-
-func closeResponseChannels(responses map[string]chan Response) {
-	for _, cResponse := range responses {
-		close(cResponse)
+	wg.Add(len(r.resources))
+	for _, res := range r.resources {
+		res := res
+		go func() {
+			res.Run(ctx, input, responseMap, watcher)
+			wg.Done()
+		}()
 	}
+	wg.Wait()
+
+	return responseMap.Data()
 }

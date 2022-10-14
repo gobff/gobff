@@ -99,7 +99,7 @@ func (s *serverImpl) instanceResources() error {
 		if cfg.CacheDuration != 0 {
 			opts.Cache = cache.NewCache[json.RawMessage](cfg.CacheDuration)
 		}
-		s.resources[name] = resource.NewResource(src, cfg.Params, opts)
+		s.resources[name] = resource.NewResource(name, src, cfg.Params, opts)
 	}
 	return nil
 }
@@ -117,6 +117,9 @@ func (s *serverImpl) instanceRoutes() error {
 			}
 
 			var opts route2.ResourceOptions
+			if resourceConfig.DependsOn != nil {
+				opts.DependsOn = resourceConfig.DependsOn
+			}
 			if resourceConfig.Output != "" {
 				t, err := transformer.New(resourceConfig.Output)
 				if err != nil {

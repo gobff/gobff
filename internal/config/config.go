@@ -23,8 +23,9 @@ type (
 			Path      string `yaml:"path"`
 			Method    string `yaml:"method"`
 			Resources map[string]struct {
-				As     string `yaml:"as,omitempty"`
-				Output string `yaml:"output,omitempty"`
+				As        string   `yaml:"as,omitempty"`
+				Output    string   `yaml:"output,omitempty"`
+				DependsOn []string `yaml:"depends_on"`
 			} `yaml:"resources"`
 		} `yaml:"routes"`
 	}
