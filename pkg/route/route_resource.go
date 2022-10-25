@@ -7,6 +7,7 @@ import (
 	"github.com/carlosrodriguesf/gobff/pkg/resource"
 	"github.com/carlosrodriguesf/gobff/tool/cache"
 	"github.com/carlosrodriguesf/gobff/tool/keywatcher"
+	"github.com/carlosrodriguesf/gobff/tool/logger"
 	"github.com/carlosrodriguesf/gobff/tool/syncmap"
 	"github.com/carlosrodriguesf/gobff/tool/transformer"
 )
@@ -27,6 +28,7 @@ type (
 		r
 		alias          string
 		cache          cache.Cache[*ResourceResultData]
+		logger         logger.Logger
 		dependencyKeys []string
 		transformer    transformer.Transformer
 	}
@@ -42,7 +44,13 @@ func NewResource(resource resource.Resource, alias string, opts ResourceOptions)
 	}
 }
 
-func (r Resource) Run(ctx ResourceContext, params map[string][]string, input json.RawMessage) {
+func (r *Resource) setLogger(logger logger.Logger) {
+	r.logger = logger.
+		AddPrefix("resource").
+		AddPrefix(r.Name())
+}
+
+func (r *Resource) Run(ctx ResourceContext, params map[string][]string, input json.RawMessage) {
 	defer ctx.watcher.Done(r.Name())
 
 	data, err := r.runResource(ctx, params, input)
@@ -53,7 +61,7 @@ func (r Resource) Run(ctx ResourceContext, params map[string][]string, input jso
 	})
 }
 
-func (r Resource) runResource(ctx ResourceContext, params map[string][]string, input json.RawMessage) (*ResourceResultData, error) {
+func (r *Resource) runResource(ctx ResourceContext, params map[string][]string, input json.RawMessage) (*ResourceResultData, error) {
 	if r.cache == nil {
 		return r.runResourceWithoutCache(ctx, params, input)
 	}
@@ -64,6 +72,7 @@ func (r Resource) runResource(ctx ResourceContext, params map[string][]string, i
 
 	data, err := r.runResourceWithoutCache(ctx, params, input)
 	if err != nil {
+		r.logger.WithStackTrace().ErrorE(err)
 		return nil, err
 	}
 
@@ -72,7 +81,7 @@ func (r Resource) runResource(ctx ResourceContext, params map[string][]string, i
 	return data, nil
 }
 
-func (r Resource) runResourceWithoutCache(ctx ResourceContext, params map[string][]string, body json.RawMessage) (*ResourceResultData, error) {
+func (r *Resource) runResourceWithoutCache(ctx ResourceContext, params map[string][]string, body json.RawMessage) (*ResourceResultData, error) {
 	if r.dependencyKeys != nil {
 		ctx.watcher.Wait(r.dependencyKeys)
 	}
@@ -82,6 +91,7 @@ func (r Resource) runResourceWithoutCache(ctx ResourceContext, params map[string
 		Body:   body,
 	})
 	if err != nil {
+		r.logger.WithStackTrace().ErrorE(err)
 		return nil, err
 	}
 
@@ -93,6 +103,7 @@ func (r Resource) runResourceWithoutCache(ctx ResourceContext, params map[string
 	if r.transformer != nil {
 		resultData.OutputData, err = r.transformer.Transform(resultData.OriginData)
 		if err != nil {
+			r.logger.WithStackTrace().ErrorE(err)
 			return nil, err
 		}
 	}

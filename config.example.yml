@@ -27,5 +27,7 @@ routes:
     resources:
       sw_planets:
         as: planets
+        output: "{results{name,population}}"
       sw_people:
         as: people
+        output: "{results{name,height,mass,hair_color,skin_color,eye_color,birth_year}}"

@@ -43,12 +43,12 @@ type (
 		ErrorE(err error)
 		FatalE(err error)
 		WithStackTrace() Logger
-		WithPrefix(str string) Logger
+		AddPrefix(str string) Logger
 	}
 	logger struct {
 		output         io.Writer
 		minLevel       Level
-		msgPrefix      string
+		msgPrefixes    []string
 		withStackTrace bool
 	}
 )
@@ -116,8 +116,8 @@ func (l logger) WithStackTrace() Logger {
 	return l
 }
 
-func (l logger) WithPrefix(prefix string) Logger {
-	l.msgPrefix = prefix
+func (l logger) AddPrefix(prefix string) Logger {
+	l.msgPrefixes = append(l.msgPrefixes, prefix)
 	return l
 }
 
@@ -128,26 +128,23 @@ func (l logger) print(level Level, msg ...string) {
 
 	var builder strings.Builder
 
-	if l.msgPrefix != "" {
-		builder.WriteString(l.msgPrefix)
-		builder.WriteRune(' ')
-	}
-
 	builder.WriteString(prefixes[level])
 	builder.WriteRune(' ')
 
 	builder.WriteString(time.Now().Format("2006-01-02 15:04:05 -0700"))
 	builder.WriteRune(' ')
 
-	builder.WriteString(msg[0])
-	for i := 1; i < len(msg); i++ {
+	if len(l.msgPrefixes) != 0 {
+		writeStringArray(&builder, l.msgPrefixes, '/')
 		builder.WriteRune(' ')
-		builder.WriteString(msg[i])
 	}
+
+	writeStringArray(&builder, msg, ' ')
 
 	if l.withStackTrace {
 		writeStackTrace(&builder, 4)
 	}
+
 	builder.WriteRune('\n')
 
 	_, err := l.output.Write([]byte(builder.String()))
@@ -173,5 +170,13 @@ func writeStackTrace(builder *strings.Builder, skipCalls int) {
 		if l.function == "main.main" {
 			break
 		}
+	}
+}
+
+func writeStringArray(builder *strings.Builder, msg []string, sep rune) {
+	builder.WriteString(msg[0])
+	for i := 1; i < len(msg); i++ {
+		builder.WriteRune('/')
+		builder.WriteString(msg[i])
 	}
 }

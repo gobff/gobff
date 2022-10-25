@@ -53,8 +53,13 @@ func (s *serverImpl) Run() {
 	s.instanceSources()
 	s.instanceResources()
 	s.instanceRoutes()
-	if err := s.gin.Run("localhost:8080"); err != nil {
-		s.logger.WithStackTrace().FatalE(err)
+	for {
+		if err := s.gin.Run("localhost:8080"); err != nil {
+			s.logger.WithStackTrace().FatalE(err)
+		}
+		if err := recover(); err != nil {
+			s.logger.ErrorE(err.(error))
+		}
 	}
 }
 

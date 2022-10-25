@@ -30,7 +30,7 @@ func newSourceHTTP(name string, config yaml.Node, opts Options) (*sourceHttp, er
 		return nil, err
 	}
 	return &sourceHttp{
-		logger:  opts.Logger.WithPrefix("source.http." + name),
+		logger:  opts.Logger.AddPrefix("source/http." + name),
 		url:     srcConfig.URL,
 		headers: srcConfig.Headers,
 	}, nil

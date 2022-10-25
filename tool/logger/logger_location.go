@@ -13,7 +13,7 @@ type location struct {
 }
 
 func (l location) String() string {
-	return fmt.Sprintf("%s:%d(%s)", l.file, l.line, l.function)
+	return fmt.Sprintf("%s:%d (%s)", l.file, l.line, l.function)
 }
 
 func getLocation(skipCalls int) *location {

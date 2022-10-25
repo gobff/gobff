@@ -2,32 +2,32 @@ package syncmap
 
 import "sync"
 
-type Map[V any] struct {
-	data  map[string]V
+type Map[Value any] struct {
+	data  map[string]Value
 	mutex *sync.Mutex
 }
 
-func New[V any]() Map[V] {
-	return Map[V]{
-		data:  make(map[string]V),
+func New[Value any]() Map[Value] {
+	return Map[Value]{
+		data:  make(map[string]Value),
 		mutex: new(sync.Mutex),
 	}
 }
 
-func (m Map[V]) Set(key string, v V) {
+func (m Map[Value]) Set(key string, v Value) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	m.data[key] = v
 }
 
-func (m Map[V]) Get(key string) V {
+func (m Map[Value]) Get(key string) Value {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	return m.data[key]
 }
 
-func (m Map[V]) Data() map[string]V {
+func (m Map[Value]) Data() map[string]Value {
 	return m.data
 }

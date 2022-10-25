@@ -25,8 +25,10 @@ type (
 )
 
 func New(logger logger.Logger, resources []Resource) Route {
+	logger = logger.AddPrefix("route")
 	resourceMap := make(map[string]Resource)
 	for _, resource := range resources {
+		resource.setLogger(logger)
 		resourceMap[resource.Name()] = resource
 	}
 	return &routeImpl{
@@ -117,10 +119,11 @@ func buildOutputFromResultSet(resultSet syncmap.Map[ResourceResult]) map[string]
 		if result.Omit {
 			continue
 		}
-		output[result.Alias] = ResourceResponse{
-			Data:  result.OutputData,
-			Error: result.Error,
+		if result.Error != nil {
+			output[result.Alias] = ResourceResponse{Error: result.Error}
+			continue
 		}
+		output[result.Alias] = ResourceResponse{Data: result.OutputData}
 	}
 	return output
 }
